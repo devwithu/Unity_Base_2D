@@ -1,0 +1,27 @@
+fileFormatVersion: 2
+guid: 7e5841b334088a842b54641a777ef0c9
+timeCreated: 1678312533
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  externalObjects: {}
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: iCiel Cucho
+  fontNames:
+  - iCiel Cucho
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 4372dba0561b60048bf41b479554e66d, type: 3}
+  customCharacters:
+  fontRenderingMode: 0
+  output:
+    hasEmptyFontData: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData:
+  assetBundleName:
+  assetBundleVariant:
