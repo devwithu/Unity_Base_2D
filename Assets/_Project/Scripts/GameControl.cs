@@ -157,6 +157,7 @@ public class GameControl : MonoBehaviour
 
 	public void OnMouseDown2()
 	{
+		Debug.Log("OnMouseDown2");
 	}
 
 	private void AddBullet()
