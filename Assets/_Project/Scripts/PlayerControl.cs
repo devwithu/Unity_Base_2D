@@ -1,29 +1,23 @@
 using UnityEngine;
 
-public class PlayerControl : MonoBehaviour
+public class PlayerControl : MonoSingleton<PlayerControl>
 {
 	public Animator Anim;
-
-	private static PlayerControl instance;
+	
+	private static readonly int StatusAnim = Animator.StringToHash("StatusAnim");
 
 	public SpriteRenderer SpriteWeaponds;
 
 	public SpriteRenderer SpriteShield;
 
-	public static PlayerControl Instance
-	{
-		get
-		{
-			return null;
-		}
-	}
-
 	private void Awake()
 	{
+		//Anim = GetComponent<Animator>();
 	}
 
 	public void SetAnim(int _status)
 	{
+		Anim.SetInteger(StatusAnim, _status);
 	}
 
 	public void SetWeaponds(int _level)

@@ -7,10 +7,12 @@ public class AutoDestroyG : MonoBehaviour
 
 	private void Start()
 	{
+		StartCoroutine(DestroyG());
 	}
 
 	private IEnumerator DestroyG()
 	{
-		return null;
+		yield return new WaitForSeconds(time);
+		Destroy(gameObject);
 	}
 }
