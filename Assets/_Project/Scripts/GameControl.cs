@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class GameControl : MonoSingleton<GameControl>
 {
@@ -84,6 +86,7 @@ public class GameControl : MonoSingleton<GameControl>
 	public Button btEndless;
 
 	private int Score;
+	private int HighScore;
 
 	private int startHealth;
 
@@ -105,8 +108,17 @@ public class GameControl : MonoSingleton<GameControl>
 	
 	public List<ItemControl> ListItemControlWeaponds;
 	public List<ItemControl> ListItemControlShields;
-	
 
+	private int costKame = 5;
+	private int costMagic = 10;
+	private int costIron = 15;
+
+	public int attackCountKame = 3;
+	public int attackCountMagic = 3;
+	public int attackCountIron = 11;
+
+	bool isEndless = false;
+	
 	private void Awake()
 	{
 		DOTween.Init();
@@ -121,6 +133,7 @@ public class GameControl : MonoSingleton<GameControl>
 		txtGold.text = Gold.ToString();
 		txtGem.text = Gem.ToString();
 		txtNumClick.text = numClick.ToString() + "/" + levelNumClick.ToString();
+		txtHighScore.text = HighScore.ToString();
 		//imgnumClick.fillAmount = (float)numClick / (float)levelNumClick;
 		
 		// TODO
@@ -128,10 +141,21 @@ public class GameControl : MonoSingleton<GameControl>
 		
 		Player.SpriteWeaponds.sprite = ListSpriteWeapons[Level - 1];
 		Player.SpriteShield.sprite = ListSpriteShield[Shield - 1];
+
+		tempBossTraining = FindAnyObjectByType<BossTraining>().gameObject;
 		
 		btWeaponds.onClick.AddListener(ClickbtWeaponds);
 		btShield.onClick.AddListener(ClickbtShield);
 		btCloseItem.onClick.AddListener(CloseItem);
+		
+		btHeroesKame.onClick.AddListener(AddHeroesKame);
+		btHeroMagic.onClick.AddListener(AddHeroesMagic);
+		btHeroesIron.onClick.AddListener(AddHeroesIron);
+		
+		btEndless.onClick.AddListener(StartEndless);
+		btCloseEndGame.onClick.AddListener(ClickCloseEndGame);
+
+		timeAddEnemy = 0.5f;
 	}
 
 	private void Update()
@@ -146,7 +170,7 @@ public class GameControl : MonoSingleton<GameControl>
 		CriticalRate = PlayerPrefs.GetInt(KeySave.Hair, 0);
 		Gold = PlayerPrefs.GetInt(KeySave.Gold, 2000);
 		Gem = PlayerPrefs.GetInt(KeySave.Gem, 100);
-		Score = PlayerPrefs.GetInt(KeySave.HighScore, 0);
+		HighScore = PlayerPrefs.GetInt(KeySave.HighScore, 0);
 		
 		numClick = PlayerPrefs.GetInt(KeySave.NumClick, 0);
 		levelNumClick = Level * 10 + 500;
@@ -155,6 +179,14 @@ public class GameControl : MonoSingleton<GameControl>
 	
 	private void AddEnemy(int _health)
 	{
+		float randomX = UnityEngine.Random.Range(-1f, 1f);
+		float randomY = UnityEngine.Random.Range(-1f, 1f);
+
+		Vector3 spawnPosition = GameControl.Instance.Player.gameObject.transform.position + new Vector3(13 + randomX, randomY, 0);
+		GameObject goEnemy = Instantiate(PrefabEnemy, spawnPosition, Quaternion.identity);
+		Enemy enemy = goEnemy.GetComponent<Enemy>();
+		int damage = Level;
+		enemy.SetValues(Level * 2);
 	}
 
 	private void GetNumClick()
@@ -216,6 +248,8 @@ public class GameControl : MonoSingleton<GameControl>
 			PlayerPrefs.Save();
 			
 			txtGold.text = Gold.ToString();
+			
+			AddItemShields();
 		}
 		else
 		{
@@ -302,6 +336,7 @@ public class GameControl : MonoSingleton<GameControl>
 		}
 		
 		tempBossTraining = Instantiate(BossTraining, _Pos, Quaternion.identity);
+		tempBossTraining.gameObject.SetActive(true);
 
 		BonuesGem(1);
 	}
@@ -318,7 +353,7 @@ public class GameControl : MonoSingleton<GameControl>
 				ListItemControlWeaponds[i].ResetInfo();
 			}
 
-			normalizedX = (float)Level / (ParentWeaponds.childCount - 1);
+			normalizedX = (float)(Level-3)/ (ParentWeaponds.childCount - 1);
 			scrollRect.horizontalNormalizedPosition = normalizedX;
 			
 			return;
@@ -336,13 +371,16 @@ public class GameControl : MonoSingleton<GameControl>
 			ListItemControlWeaponds.Add(itemControl);
 		}
 		
-		normalizedX = (float)Level / (ParentWeaponds.childCount - 1);
+		normalizedX = (float)(Level-3) / (ParentWeaponds.childCount - 1);
 		scrollRect.horizontalNormalizedPosition = normalizedX;
 
 	}
 
 	private void AddItemShields()
 	{
+		float normalizedX = 0f;
+		ScrollRect scrollRect = ParentShield.GetComponentInParent<ScrollRect>();
+		
 		if (ParentShield.childCount > 0)
 		{
 			for (int i = ParentShield.childCount - 1; i >= 0; i--)
@@ -350,6 +388,9 @@ public class GameControl : MonoSingleton<GameControl>
 				ListItemControlShields[i].ResetInfo();
 			}
 
+			normalizedX = (float)(Shield-3)/ (ParentShield.childCount - 1);
+			scrollRect.horizontalNormalizedPosition = normalizedX;
+			
 			return;
 		}
 
@@ -360,11 +401,12 @@ public class GameControl : MonoSingleton<GameControl>
 			ItemControl itemControl = item.GetComponent<ItemControl>();
 			
 			int cost = (i + 1) * 1000; 
-			bool isUnlock = (i >= Level) ? true : false; 
 			itemControl.SetInfor(typeItem.ItemShield, ListSpriteShield[i], i + 1, cost); 
 			
 			ListItemControlShields.Add(itemControl);
 		}
+		normalizedX = (float)(Shield-3)/ (ParentShield.childCount - 1);
+		scrollRect.horizontalNormalizedPosition = normalizedX;
 	}
 	
 	private void ClearAllChildren(Transform _Parent)
@@ -407,14 +449,53 @@ public class GameControl : MonoSingleton<GameControl>
 
 	private void AddHeroesMagic()
 	{
+		if (Gem < costMagic)
+			return;
+		
+		HeroMagicControl heroMagicControl = FindAnyObjectByType<HeroMagicControl>();
+		if (heroMagicControl != null)
+			return;
+		
+		BonuesGem(-costMagic);
+		
+		Vector3 spawnPosition = Player.transform.position + new Vector3(-2f, -1f, 0f); // Adjust the offset as needed
+		heroMagicControl = Instantiate(HeroesMagic, spawnPosition, Quaternion.identity).GetComponent<HeroMagicControl>();
 	}
 
 	private void AddHeroesKame()
 	{
+		if (Gem < costKame)
+			return;
+		
+		HeroKameControl heroKameControl = FindAnyObjectByType<HeroKameControl>();
+		if (heroKameControl != null)
+			return;
+		
+		BonuesGem(-costKame);
+		
+		Vector3 spawnPosition = Player.transform.position + new Vector3(2f, 0.3f, 0f); // Adjust the offset as needed
+		heroKameControl = Instantiate(HeroesKame, spawnPosition, Quaternion.identity).GetComponent<HeroKameControl>();
 	}
 
 	private void AddHeroesIron()
 	{
+		if (Gem < costIron)
+			return;
+		
+		BonuesGem(-costIron);
+
+		for (int i = 0; i < attackCountIron; i++)
+		{
+			float randomX = UnityEngine.Random.Range(-1f, 1f);
+			float randomY = UnityEngine.Random.Range(-1f, 1f);
+
+			Vector3 spawnPosition = gameObject.transform.position + new Vector3(-7 + randomX, 1 + randomY, 0);
+			GameObject bullet = Instantiate(Bullet, spawnPosition, Quaternion.identity);
+			BulletControl bulletControl = bullet.GetComponent<BulletControl>();
+			int damage = Level;
+			bulletControl.SetValues(imIron, damage, false);
+		}
+		
 	}
 
 	private IEnumerator ShowbtMagic()
@@ -429,25 +510,78 @@ public class GameControl : MonoSingleton<GameControl>
 
 	public void StartEndless()
 	{
+		tempBossTraining.gameObject.SetActive(false);
+
+		Score = 0;
+		txtScore.text = Score.ToString();
+		StartCoroutine(CoSpawnEnemy());
 	}
 
-	public void BonuesScore(int _Score)
+	private IEnumerator CoSpawnEnemy()
 	{
+		isEndless = true;
+		
+		float spawnTime = timeAddEnemy + 0;
+		float checkTime = Time.deltaTime;
+		while (isEndless)
+		{
+			AddEnemy(Level * 2);
+			
+			// randomtime is timeAddEnemy +- 30%
+			float randomTime = UnityEngine.Random.Range(spawnTime * 0.7f, spawnTime * 1.3f);
+			yield return new WaitForSeconds(randomTime);
+
+			// minus spawnTime every 3 second
+			// check time
+			checkTime += Time.deltaTime;
+			//Debug.Log($"Check Time: {checkTime}");
+			if (checkTime >= 0.03f)
+			{
+				spawnTime -= 0.01f;
+				checkTime = 0f;
+				//Debug.Log($"Spawn Time: {spawnTime}");
+			}
+
+		}
 	}
 
 	private void OnTriggerEnter2D(Collider2D other)
 	{
+		if (!other.CompareTag("Enemy"))
+			return;
+
+		isEndless = false;
+		
+		EndGame();
+	}
+
+	public void AddScore(int _Score)
+	{
+		Score += _Score;
+		txtScore.text = Score.ToString();
+		
+		if (Score > HighScore)
+		{
+			txtHighScore.text = Score.ToString();
+		}
 	}
 
 	private void EndGame()
 	{
-	}
-
-	private void GetHideScore()
-	{
+		txtPopUpScore.text = Score.ToString();
+		if (Score > HighScore)
+		{
+			HighScore = Score;
+			PlayerPrefs.SetInt(KeySave.HighScore, HighScore);
+			PlayerPrefs.Save();
+		}
+		panelEndGame.gameObject.SetActive(true);
 	}
 
 	private void ClickCloseEndGame()
 	{
+		txtScore.text = "";
+		panelEndGame.gameObject.SetActive(false);
+		tempBossTraining.gameObject.SetActive(true);
 	}
 }
